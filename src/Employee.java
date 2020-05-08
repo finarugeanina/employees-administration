@@ -1,3 +1,5 @@
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Scanner;
 
 /**
@@ -6,13 +8,13 @@ import java.util.Scanner;
  * @author geanina.finaru
  * @version 1.0
  */
-public abstract class Employee {
+public class Employee {
 
 	private String name;
 	private int employeeId;
 	private String gender;
 	private String CNP;
-
+	Scanner scan = new Scanner(System.in);
 	/**
 	 * This returns the current name of this employee
 	 * 
@@ -79,10 +81,39 @@ public abstract class Employee {
 	/**
 	 * This sets the CNP for the employee
 	 * 
-	 * @param cNP
+	 * @param CNP
 	 */
-	public void setCNP(String cNP) {
-		CNP = cNP;
+	public void setCNP(String CNP) {
+		if (CNP.length() != 13) {
+			System.out.println("The length of the CNP should be 13 numbers! Please re-enter the CNP:");
+			setCNP(scan.nextLine());
+
+		} else if (!CNP.substring(0, 1).equals("1") && !CNP.substring(0, 1).equals("2")) {
+			System.out.println("The CNP should start only with 1 or 2! Please re-enter the CNP:");
+			setCNP(scan.nextLine());
+		} else if (!isValidDateFormat(CNP.substring(1, 7))) {
+			System.out.println("The enetered CNP is not in the right date format! Please re-enter the CNP:)");
+			setCNP(scan.nextLine());
+		} else {
+			this.CNP = CNP;
+		}
+	}
+
+	/**
+	 * This returns true if the substring of the CNP is in a valid date format
+	 * 
+	 * @return
+	 */
+	public static boolean isValidDateFormat(String date)
+	{
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyMMdd");
+		dateFormat.setLenient(false);
+		try {
+			dateFormat.parse(date);
+		} catch (ParseException ex) {
+			return false;
+		}
+		return true;
 	}
 
 	@Override
@@ -90,21 +121,19 @@ public abstract class Employee {
 		return String.format("\nName: %s \nGender: %s \nEmployeeId: %d \nCNP: %s", name, gender, employeeId, CNP);
 	}
 
-
-	public void addDetails() {
-
-		Scanner scan = new Scanner(System.in);
+	/**
+	 * This sets basic details for the employee: name, employeeId, gender and CNP
+	 */
+	public void addDetailsForEmployee() {
 		System.out.println("Please type in the name of the new employee:");
-		this.name = scan.nextLine();
+		setName(scan.nextLine());
 		System.out.println("Please type in the employeeId of the new employee: ");
-		this.employeeId = scan.nextInt();
+		setEmployeeId(scan.nextInt());
 		scan.nextLine();
 		System.out.println("Please type in the CNP of the new employee: ");
-		this.CNP = scan.nextLine();
+		setCNP(scan.nextLine());
 		System.out.println("Please type in the gender of the new employee: ");
-		this.gender = scan.nextLine();
+		setGender(scan.nextLine());
+	}
 
-
-
-	};
 }

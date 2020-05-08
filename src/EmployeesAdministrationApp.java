@@ -1,18 +1,18 @@
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+import org.json.simple.JSONObject;
+
 public class EmployeesAdministrationApp {
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
 
-		// Choose an option from Main Menu
-
-		int number = chooseAnOptionFromMainMenu();
-		Scanner scan = new Scanner(System.in);
-
-
-		switch (number) {
+		switch (chooseAnOptionFromMainMenu()) {
 		case 1:
 			addNewEmployee();
 			break;
@@ -30,92 +30,81 @@ public class EmployeesAdministrationApp {
 			break;
 		case 6:
 			convertEmployee();
+			break;
 		case 7:
 			System.out.println("Bye Bye!");
-
+			break;
 		}
-		scan.close();
 	}
 
-	private static void addNewEmployee() throws Exception {
-		{
-			System.out.println(
-					"Please select the type of the new employee:"
-							+ "\n1. QA Employee"
-							+ "\n2. Developer Employee"
-							+ "\n3. QA Team Lead Employee "
-					+ "\n4. Developer Team Lead Employee"
-					+ "\n5. Project Manager");
+	private static void addNewEmployee() {
+		System.out.println("Please select the type of the new employee:"
+				+ "\n1. QA Employee"
+				+ "\n2. Developer Employee"
+				+ "\n3. QA Team Lead Employee " + "\n4. Developer Team Lead Employee" + "\n5. Project Manager");
 			Scanner scan = new Scanner(System.in);
 			int typeOfTheEmployee = scan.nextInt();
 
 			switch (typeOfTheEmployee) {
-			case 1:
-			{	
-				addQAEmployee();
+			case 1: {
+				QAEmployee qa = new QAEmployee();
+				System.out.println("Enter the QA employee data");
+				qa.addDetailsForEmployee();
+				writeJson(qa);
 				break;
 			}
 			case 2: {
-				addDeveloperEmployee();
+				DeveloperEmployee dev = new DeveloperEmployee();
+				System.out.println("Enter the Developer employee data");
+				dev.addDetailsForEmployee();
+				writeJson(dev);
 				break;
 			}
 			case 3: {
-				addQATeamLeadEmployee();
+				QATeamLead qaTeamLead = new QATeamLead();
+				System.out.println("Enter the QA Team Lead employee data");
+				qaTeamLead.addDetailsForEmployee();
+				writeJson(qaTeamLead);
 				break;
 			}
-
 			case 4: {
-				addDeveloperTeamLeadEmployee();
+				DeveloperTeamLead developerTeamLead = new DeveloperTeamLead();
+				System.out.println("Enter the Developer Team Lead employee data");
+				developerTeamLead.addDetailsForEmployee();
+				writeJson(developerTeamLead);
 				break;
 			}
-
 			case 5: {
-				addProjectManagerEmployee();
+				ProjectManager projectManager = new ProjectManager();
+				System.out.println("Enter the Project Manager employee data");
+				projectManager.addDetailsForEmployee();
+				writeJson(projectManager);
 				break;
 			}
-
 			}
 			scan.close();
+	}
 
+	private static void writeJson(Object obj) {
+		Method[] methods = obj.getClass().getMethods();
+		HashMap<String, Object> employeeDetails = new HashMap<String, Object>();
+		for (Method method : methods) {
+			if (method.getName().startsWith("get") && !method.getName().equals("getClass")) {
+				try {
+					employeeDetails.put(method.getName().replace("get", ""), method.invoke(obj));
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
 		}
-	}
-
-
-	private static void addQAEmployee() throws Exception {
-		QAEmployee qa = new QAEmployee();
-		System.out.println("Enter the QA employee data");
-		qa.addDetails();
-		qa.writeJSONFileForQaEmployee(qa, "employees.json");
-
-	}
-
-	private static void addDeveloperEmployee() throws Exception {
-		DeveloperEmployee dev = new DeveloperEmployee();
-		System.out.println("Enter the Developer employee data");
-		dev.addDetails();
-		dev.writeJSONFileForDevEmployee(dev, "employees.json");
-	}
-
-	private static void addQATeamLeadEmployee() throws Exception {
-		QATeamLead qaTeamLead = new QATeamLead();
-		System.out.println("Enter the QA Team Lead employee data");
-		qaTeamLead.addDetails();
-		qaTeamLead.writeJSONFileForQATeamLeadEmployee(qaTeamLead, "employees.json");
-	}
-
-	private static void addDeveloperTeamLeadEmployee() throws Exception {
-		DeveloperTeamLead developerTeamLead = new DeveloperTeamLead();
-		System.out.println("Enter the Developer Team Lead employee data");
-		developerTeamLead.addDetails();
-		developerTeamLead.writeJSONFileForDeveloperTeamLeadEmployee(developerTeamLead, "employees.json");
-
-	}
-
-	private static void addProjectManagerEmployee() throws Exception {
-		ProjectManager projectManager = new ProjectManager();
-		System.out.println("Enter the Project Manager employee data");
-		projectManager.addDetails();
-		projectManager.writeJSONFileForProjectManagerEmployee(projectManager, "employees.json");
+		JSONObject employeeDetailsJson = new JSONObject(employeeDetails);
+		try {
+			Files.write(Paths.get("employees.json"), employeeDetailsJson.toJSONString().getBytes());
+		} catch (IOException e) {
+			System.out.println("The file wasn't created");
+		}
+		System.out.println("You have added a new " + obj.getClass().getName() + " with: " + obj
+				+ "\nin your employees.json document");
 	}
 
 	private static int chooseAnOptionFromMainMenu() {
@@ -131,12 +120,10 @@ public class EmployeesAdministrationApp {
 		System.out.println("Hello! Please select an option:\n" + "1. Add a new employee\n" + "2. View all employees\n"
 				+ "3. Search an employee\n" + "4. Delete an employee\n" + "5. Update existing employee\n"
 				+ "6. Convert the type of an employee\n" + "7. Exit Application");
-
 		Scanner scan = new Scanner(System.in);
 		int number = scan.nextInt();
 		System.out.println("You have selected " + number + options.get(number));
 		return number;
-
 	}
 	
 	private static void convertEmployee() {
@@ -158,5 +145,4 @@ public class EmployeesAdministrationApp {
 	private static void viewAllEmployees() {
 		System.out.println("This is the list of all employees: ");
 	}
-
 }
