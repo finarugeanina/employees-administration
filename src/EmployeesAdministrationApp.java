@@ -1,12 +1,15 @@
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 public class EmployeesAdministrationApp {
 
@@ -47,64 +50,77 @@ public class EmployeesAdministrationApp {
 
 			switch (typeOfTheEmployee) {
 			case 1: {
-				QAEmployee qa = new QAEmployee();
-				System.out.println("Enter the QA employee data");
-				qa.addDetailsForEmployee();
-				writeJson(qa);
+				addEmployee(new QAEmployee(), "Enter the QA employee data");
 				break;
 			}
 			case 2: {
-				DeveloperEmployee dev = new DeveloperEmployee();
-				System.out.println("Enter the Developer employee data");
-				dev.addDetailsForEmployee();
-				writeJson(dev);
+				addEmployee(new DeveloperEmployee(), "Enter the Developer employee data");
 				break;
 			}
 			case 3: {
-				QATeamLead qaTeamLead = new QATeamLead();
-				System.out.println("Enter the QA Team Lead employee data");
-				qaTeamLead.addDetailsForEmployee();
-				writeJson(qaTeamLead);
+				addEmployee(new QATeamLead(), "Enter the QA Team Lead employee data");
 				break;
 			}
 			case 4: {
-				DeveloperTeamLead developerTeamLead = new DeveloperTeamLead();
-				System.out.println("Enter the Developer Team Lead employee data");
-				developerTeamLead.addDetailsForEmployee();
-				writeJson(developerTeamLead);
+				addEmployee(new DeveloperTeamLead(), "Enter the Developer Team Lead employee data");
 				break;
 			}
 			case 5: {
-				ProjectManager projectManager = new ProjectManager();
-				System.out.println("Enter the Project Manager employee data");
-				projectManager.addDetailsForEmployee();
-				writeJson(projectManager);
+				addEmployee(new ProjectManager(), "Enter the Project Manager employee data");
 				break;
 			}
 			}
 			scan.close();
 	}
 
+	private static void addEmployee(Object employee, String message) {
+		System.out.println(message);
+		try {
+			Method addDetailsMethod = employee.getClass().getDeclaredMethod("addDetailsForEmployee");
+			addDetailsMethod.invoke(employee);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		writeJson(employee);
+	}
+
 	private static void writeJson(Object obj) {
-		Method[] methods = obj.getClass().getMethods();
-		HashMap<String, Object> employeeDetails = new HashMap<String, Object>();
-		for (Method method : methods) {
-			if (method.getName().startsWith("get") && !method.getName().equals("getClass")) {
-				try {
-					employeeDetails.put(method.getName().replace("get", ""), method.invoke(obj));
-				} catch (Exception e) {
-					e.printStackTrace();
+		String employeesJsonFile = "employees1.json";
+		JSONParser parser = new JSONParser();
+		try {
+			JSONArray allEmployeesList = new JSONArray();
+			File fileReader = new File(employeesJsonFile);
+			if (fileReader.length() != 0) {
+				allEmployeesList = (JSONArray) parser.parse(new FileReader(employeesJsonFile));
+			}
+
+			Method[] methods = obj.getClass().getMethods();
+			Map<String, Object> employeeDetails = new HashMap<String, Object>();
+			for (Method method : methods) {
+				if (method.getName().startsWith("get") && !method.getName().equals("getClass")) {
+					try {
+						employeeDetails.put(method.getName().replace("get", ""), method.invoke(obj));
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 				}
 			}
-		}
-		JSONObject employeeDetailsJson = new JSONObject(employeeDetails);
-		try {
-			Files.write(Paths.get("employees.json"), employeeDetailsJson.toJSONString().getBytes());
-		} catch (IOException e) {
-			System.out.println("The file wasn't created");
-		}
+			Map<String, Map<String, Object>> employeeDetailsJson = new HashMap<>();
+			employeeDetailsJson.put("employee", employeeDetails);
+			JSONObject employeeDetailsJsonObject = new JSONObject(employeeDetailsJson);
+			allEmployeesList.add(employeeDetailsJsonObject);
+			try {
+				FileWriter file = new FileWriter(employeesJsonFile);
+				file.write(allEmployeesList.toJSONString());
+				file.flush();
+			} catch (IOException e) {
+				System.out.println("There was a problem in writing data to this file");
+			}
+		} catch (Exception e) {
+		e.printStackTrace();
+	}
 		System.out.println("You have added a new " + obj.getClass().getName() + " with: " + obj
-				+ "\nin your employees.json document");
+				+ "\nin your " + employeesJsonFile + " document");
 	}
 
 	private static int chooseAnOptionFromMainMenu() {

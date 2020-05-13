@@ -7,13 +7,17 @@ public class QATeamLead extends QAEmployee {
 		return qaExperience;
 	}
 
-	public void setQAexperience(int qAexperience) {
-		qaExperience = qAexperience;
+	public void setQAexperience(int qaExperience) {
+		if (qaExperience < 1 || qaExperience > 20) {
+			System.out.println("Please re-enter a value between 1 and 20: ");
+			setQAexperience(scan.nextInt());
+		} else {
+			this.qaExperience = qaExperience;
+		}
 	}
 
 	@Override
 	public void addDetailsForEmployee() {
-
 		super.addDetailsForEmployee();
 		System.out.println("Please type in the QA experience of the new employee");
 		try (Scanner scan = new Scanner(System.in)) {

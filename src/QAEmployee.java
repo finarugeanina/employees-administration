@@ -2,25 +2,25 @@ import java.util.Scanner;
 
 public class QAEmployee extends Employee {
 	private int qaGeneralLevel;
-
-	public QAEmployee() {
-		super();
-	}
+	Scanner scan = new Scanner(System.in);
 
 	public int getQaGeneralLevel() {
 		return qaGeneralLevel;
 	}
 
 	public void setQaGeneralLevel(int qaGeneralLevel) {
-		this.qaGeneralLevel = qaGeneralLevel;
+		if (qaGeneralLevel < 1 || qaGeneralLevel > 10) {
+			System.out.println("Please re-enter a value between 1 and 10: ");
+			setQaGeneralLevel(scan.nextInt());
+		} else {
+			this.qaGeneralLevel = qaGeneralLevel;
+		}
 	}
 
 	@Override
 	public void addDetailsForEmployee() {
-
 		super.addDetailsForEmployee();
 		System.out.println("Please type in the general level of QA knowings for the new employee: ");
-		Scanner scan = new Scanner(System.in);
 		setQaGeneralLevel(scan.nextInt());
 	}
 
