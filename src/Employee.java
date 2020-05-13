@@ -84,9 +84,7 @@ public class Employee {
 		try
 		{
 			JSONArray obj = (JSONArray) parser.parse(new FileReader(employeesJsonFile));
-			System.out.println(obj);
 			for (Object emp : obj) {
-				System.out.println(emp);
 				if (parseEmployeeObject((JSONObject) emp, employeeId)) {
 					return false;
 				}
@@ -108,7 +106,6 @@ public class Employee {
 	 */
 	public boolean parseEmployeeObject(JSONObject employee, int employeeId) {
 		JSONObject employeeObject = (JSONObject) employee.get("employee");
-		System.out.println(employeeObject);
 		if (Integer.parseInt(String.valueOf(employeeObject.get("EmployeeId"))) == employeeId) {
 			return true;
 		} else
