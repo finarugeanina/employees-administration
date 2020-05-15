@@ -21,6 +21,7 @@ public class Employee {
 	private String gender;
 	private String CNP;
 	Scanner scan = new Scanner(System.in);
+
 	/**
 	 * This returns the current name of this employee
 	 * 
@@ -77,22 +78,21 @@ public class Employee {
 	 * @return
 	 */
 	private boolean validateUnicityOfId(int employeeId) {
-		String employeesJsonFile = "employees1.json";
+		String employeesJsonFile = "employees.json";
 		File file = new File(employeesJsonFile);
 		if (file.length() != 0) {
 			JSONParser parser = new JSONParser();
-		try
-		{
-			JSONArray obj = (JSONArray) parser.parse(new FileReader(employeesJsonFile));
-			for (Object emp : obj) {
-				if (parseEmployeeObject((JSONObject) emp, employeeId)) {
-					return false;
+			try {
+				JSONArray obj = (JSONArray) parser.parse(new FileReader(employeesJsonFile));
+				for (Object emp : obj) {
+					if (parseEmployeeObject((JSONObject) emp, employeeId)) {
+						return false;
+					}
 				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
-	}
 		return true;
 	}
 
@@ -110,7 +110,7 @@ public class Employee {
 			return true;
 		} else
 			return false;
-	  }
+	}
 
 	/**
 	 * This returns the gender of this employee
@@ -172,8 +172,7 @@ public class Employee {
 	 * 
 	 * @return
 	 */
-	public static boolean isValidDateFormat(String date)
-	{
+	public static boolean isValidDateFormat(String date) {
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyMMdd");
 		dateFormat.setLenient(false);
 		try {
