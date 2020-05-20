@@ -12,6 +12,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 public class EmployeesAdministrationApp {
+	public static JSONArray listOfEmployees = new JSONArray();
 
 	public static void main(String[] args) {
 		int number = chooseAnOptionFromMainMenu();
@@ -35,9 +36,65 @@ public class EmployeesAdministrationApp {
 				case 6:
 					convertEmployee();
 					break;
+				case 7:
+					saveFile();
+					break;
+				case 8:
+					loadFile();
+					break;
 			}
 			number = chooseAnOptionFromMainMenu();
-		} while (number != 7);
+		} while (number != 9);
+	}
+
+	private static void loadFile() {
+		System.out.println("Please write the name of the file you want to load: ");
+		Scanner scan = new Scanner(System.in);
+		String jsonFile = scan.nextLine();
+		if (!jsonFile.endsWith(".json")) {
+			jsonFile = jsonFile + ".json";
+		}
+		try {
+			JSONParser parser = new JSONParser();
+			File fileReader = new File(jsonFile);
+			if (fileReader.exists()) {
+				if (fileReader.length() != 0) {
+					listOfEmployees.clear();
+					JSONArray arrayFromJsonFile = (JSONArray) parser.parse(new FileReader(jsonFile));
+					for (Object emp : arrayFromJsonFile) {
+						listOfEmployees.add(emp);
+					}
+					System.out.println("The data from the " + jsonFile + " file was loaded");
+				} else {
+					System.out.println("The file is empty!");
+				}
+			} else {
+				System.out.println("The file does not exist!");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static void saveFile() {
+		if (listOfEmployees.size() != 0) {
+			System.out.println("Please type in the file you want to save the data in: ");
+			Scanner scan = new Scanner(System.in);
+			String employeesJsonFile = scan.nextLine();
+			if (!employeesJsonFile.endsWith(".json")) {
+				employeesJsonFile = employeesJsonFile + ".json";
+			}
+			try {
+				FileWriter file = new FileWriter(employeesJsonFile);
+				file.write(listOfEmployees.toJSONString());
+				file.flush();
+			} catch (IOException e) {
+				System.out.println("There was a problem in writing data to this file");
+			}
+			System.out.println("The data was succesfully saved in your " + employeesJsonFile + " document");
+		} else {
+			System.out.println("There is nothing to save.");
+		}
 	}
 
 	private static void addNewEmployee() {
@@ -72,25 +129,23 @@ public class EmployeesAdministrationApp {
 
 	private static void addEmployee(Object employee, String message) {
 		System.out.println(message);
+		Scanner scan = new Scanner(System.in);
 		try {
+			int idOfTheEmployee = getValidEmployeeId(employee);
+			Class<?> c = employee.getClass();
+			Method method1 = c.getMethod("setEmployeeId", int.class);
+			method1.invoke(employee, idOfTheEmployee);
 			Method addDetailsMethod = employee.getClass().getDeclaredMethod("addDetailsForEmployee");
 			addDetailsMethod.invoke(employee);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		writeJson(employee);
-	}
-
-	private static void writeJson(Object obj) {
-		String employeesJsonFile = "employees.json";
-		JSONArray allEmployeesList = new JSONArray();
-		allEmployeesList = readFromFile(employeesJsonFile, allEmployeesList);
-		Method[] methods = obj.getClass().getMethods();
+		Method[] methods = employee.getClass().getMethods();
 		Map<String, Object> employeeDetails = new HashMap<String, Object>();
 		for (Method method : methods) {
 			if (method.getName().startsWith("get") && !method.getName().equals("getClass")) {
 				try {
-					employeeDetails.put(method.getName().replace("get", ""), method.invoke(obj));
+					employeeDetails.put(method.getName().replace("get", ""), method.invoke(employee));
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -99,31 +154,23 @@ public class EmployeesAdministrationApp {
 		Map<String, Map<String, Object>> employeeDetailsJson = new HashMap<>();
 		employeeDetailsJson.put("employee", employeeDetails);
 		JSONObject employeeDetailsJsonObject = new JSONObject(employeeDetailsJson);
-		allEmployeesList.add(employeeDetailsJsonObject);
-		try {
-			FileWriter file = new FileWriter(employeesJsonFile);
-			file.write(allEmployeesList.toJSONString());
-			file.flush();
-		} catch (IOException e) {
-			System.out.println("There was a problem in writing data to this file");
-		}
-		System.out.println("You have added a new " + obj.getClass().getName() + " with: " + obj + "\nin your "
-				+ employeesJsonFile + " document");
+		listOfEmployees.add(employeeDetailsJsonObject);
+		System.out.println("The employee was added to your list.");
 	}
 
-	private static JSONArray readFromFile(String employeesJsonFile, JSONArray allEmployeesList) {
-		try {
-			JSONParser parser = new JSONParser();
-			File fileReader = new File(employeesJsonFile);
-			if (fileReader.length() != 0) {
-				allEmployeesList = (JSONArray) parser.parse(new FileReader(employeesJsonFile));
-			} else {
-				System.out.println("The file is empty!");
+	private static int getValidEmployeeId(Object employee) {
+		System.out.println("Please type in the employeeId of the new employee: ");
+		Scanner scan = new Scanner(System.in);
+		int idOfTheEmployee = scan.nextInt();
+		for (Object emp : listOfEmployees) {
+			HashMap<String, Object> object = (HashMap<String, Object>) ((HashMap<String, Object>) emp).get("employee");
+			JSONObject obj = new JSONObject(object);
+			if (Integer.parseInt(String.valueOf(obj.get("EmployeeId"))) == idOfTheEmployee) {
+				System.out.println("The id is not unique!");
+				idOfTheEmployee = getValidEmployeeId(employee);
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
-		return allEmployeesList;
+		return idOfTheEmployee;
 	}
 
 	private static int chooseAnOptionFromMainMenu() {
@@ -134,42 +181,46 @@ public class EmployeesAdministrationApp {
 		options.put(4, ". Delete an employee");
 		options.put(5, ". Update existing employee");
 		options.put(6, ". Convert the type of an employee");
-		options.put(7, ". Exit Application");
+		options.put(7, ". Save file");
+		options.put(8, ". Load file");
+		options.put(9, ". Exit Application");
 
 		System.out.println("\nPlease select an option:\n" + "1. Add a new employee\n" + "2. View all employees\n"
 				+ "3. Search an employee\n" + "4. Delete an employee\n" + "5. Update existing employee\n"
-				+ "6. Convert the type of an employee\n" + "7. Exit Application");
+				+ "6. Convert the type of an employee\n" + "7. Save file\n" + "8. Load file\n" + "9. Exit Application");
 		Scanner scan = new Scanner(System.in);
 		int numberSelected = scan.nextInt();
-
+		scan.nextLine();
 		System.out.println("You have selected " + numberSelected + options.get(numberSelected));
 		return numberSelected;
 	}
 
 	private static void searchEmployee() {
-		System.out.println("Please type in the id of the employee you want to search: ");
-		Scanner scan = new Scanner(System.in);
-		int idOfTheEmployee = scan.nextInt();
-		String employeesJsonFile = "employees.json";
-		JSONArray allEmployeesList = new JSONArray();
-		allEmployeesList = readFromFile(employeesJsonFile, allEmployeesList);
-		for (Object emp : allEmployeesList) {
-			JSONObject employeeObject = (JSONObject) ((JSONObject) emp).get("employee");
-			if (Integer.parseInt(String.valueOf(employeeObject.get("EmployeeId"))) == idOfTheEmployee) {
-				System.out.println(employeeObject.toString().replaceAll("[{\"}]", "").replaceAll("[,]", "\n"));
+		if (listOfEmployees.size() != 0) {
+			System.out.println("Please type in the id of the employee you want to search: ");
+			Scanner scan = new Scanner(System.in);
+			int idOfTheEmployee = scan.nextInt();
+			for (Object emp : listOfEmployees) {
+				HashMap<String, Object> object = (HashMap<String, Object>) ((HashMap<String, Object>) emp).get("employee");
+				JSONObject obj = new JSONObject(object);
+				if (Integer.parseInt(String.valueOf(obj.get("EmployeeId"))) == idOfTheEmployee) {
+					System.out.println(obj.toString().replaceAll("[{\"}]", "").replace(",", "\n"));
+				}
 			}
+		} else {
+			System.out.println("The list is empty!");
 		}
 	}
 
 	private static void viewAllEmployees() {
-		System.out.println("This is the list of all employees: ");
-		String employeesJsonFile = "employees.json";
-		JSONArray allEmployeesList = new JSONArray();
-		allEmployeesList = readFromFile(employeesJsonFile, allEmployeesList);
-		for (Object emp : allEmployeesList) {
-			JSONObject employeeObject = (JSONObject) ((JSONObject) emp).get("employee");
-			System.out.println();
-			System.out.println(employeeObject.toString().replaceAll("[{\"}]", "").replaceAll("[,]", "\n"));
+		if (listOfEmployees.size() != 0) {
+			System.out.println("This is the list of all employees: ");
+			for (Object emp : listOfEmployees) {
+				System.out.println();
+				System.out.println(emp.toString().replaceAll("[{\"}]", "").replace(",", "\n").replace("employee:", ""));
+			}
+		} else {
+			System.out.println("The list is empty!");
 		}
 	}
 
