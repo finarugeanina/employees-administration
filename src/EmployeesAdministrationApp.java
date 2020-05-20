@@ -3,7 +3,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -12,7 +14,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 public class EmployeesAdministrationApp {
-	public static JSONArray listOfEmployees = new JSONArray();
+	public static List<HashMap<String, Object>> listOfEmployees = new ArrayList<HashMap<String, Object>>();
 
 	public static void main(String[] args) {
 		int number = chooseAnOptionFromMainMenu();
@@ -62,7 +64,7 @@ public class EmployeesAdministrationApp {
 					listOfEmployees.clear();
 					JSONArray arrayFromJsonFile = (JSONArray) parser.parse(new FileReader(jsonFile));
 					for (Object emp : arrayFromJsonFile) {
-						listOfEmployees.add(emp);
+						listOfEmployees.add((HashMap<String, Object>) emp);
 					}
 					System.out.println("The data from the " + jsonFile + " file was loaded");
 				} else {
@@ -86,7 +88,12 @@ public class EmployeesAdministrationApp {
 			}
 			try {
 				FileWriter file = new FileWriter(employeesJsonFile);
-				file.write(listOfEmployees.toJSONString());
+				JSONArray array = new JSONArray();
+				for (HashMap<String, Object> obj : listOfEmployees) {
+					JSONObject object = new JSONObject(obj);
+					array.add(object);
+				}
+				file.write(array.toJSONString());
 				file.flush();
 			} catch (IOException e) {
 				System.out.println("There was a problem in writing data to this file");
@@ -102,7 +109,6 @@ public class EmployeesAdministrationApp {
 				+ "\n3. QA Team Lead Employee " + "\n4. Developer Team Lead Employee" + "\n5. Project Manager");
 		Scanner scan = new Scanner(System.in);
 		int typeOfTheEmployee = scan.nextInt();
-
 		switch (typeOfTheEmployee) {
 			case 1: {
 				addEmployee(new QAEmployee(), "Enter the QA employee data");
@@ -151,10 +157,7 @@ public class EmployeesAdministrationApp {
 				}
 			}
 		}
-		Map<String, Map<String, Object>> employeeDetailsJson = new HashMap<>();
-		employeeDetailsJson.put("employee", employeeDetails);
-		JSONObject employeeDetailsJsonObject = new JSONObject(employeeDetailsJson);
-		listOfEmployees.add(employeeDetailsJsonObject);
+		listOfEmployees.add((HashMap<String, Object>) employeeDetails);
 		System.out.println("The employee was added to your list.");
 	}
 
@@ -162,10 +165,8 @@ public class EmployeesAdministrationApp {
 		System.out.println("Please type in the employeeId of the new employee: ");
 		Scanner scan = new Scanner(System.in);
 		int idOfTheEmployee = scan.nextInt();
-		for (Object emp : listOfEmployees) {
-			HashMap<String, Object> object = (HashMap<String, Object>) ((HashMap<String, Object>) emp).get("employee");
-			JSONObject obj = new JSONObject(object);
-			if (Integer.parseInt(String.valueOf(obj.get("EmployeeId"))) == idOfTheEmployee) {
+		for (HashMap<String, Object> emp : listOfEmployees) {
+			if (Integer.parseInt(String.valueOf(emp.get("EmployeeId"))) == idOfTheEmployee) {
 				System.out.println("The id is not unique!");
 				idOfTheEmployee = getValidEmployeeId(employee);
 			}
@@ -184,7 +185,6 @@ public class EmployeesAdministrationApp {
 		options.put(7, ". Save file");
 		options.put(8, ". Load file");
 		options.put(9, ". Exit Application");
-
 		System.out.println("\nPlease select an option:\n" + "1. Add a new employee\n" + "2. View all employees\n"
 				+ "3. Search an employee\n" + "4. Delete an employee\n" + "5. Update existing employee\n"
 				+ "6. Convert the type of an employee\n" + "7. Save file\n" + "8. Load file\n" + "9. Exit Application");
@@ -200,11 +200,9 @@ public class EmployeesAdministrationApp {
 			System.out.println("Please type in the id of the employee you want to search: ");
 			Scanner scan = new Scanner(System.in);
 			int idOfTheEmployee = scan.nextInt();
-			for (Object emp : listOfEmployees) {
-				HashMap<String, Object> object = (HashMap<String, Object>) ((HashMap<String, Object>) emp).get("employee");
-				JSONObject obj = new JSONObject(object);
-				if (Integer.parseInt(String.valueOf(obj.get("EmployeeId"))) == idOfTheEmployee) {
-					System.out.println(obj.toString().replaceAll("[{\"}]", "").replace(",", "\n"));
+			for (HashMap<String, Object> emp : listOfEmployees) {
+				if (Integer.parseInt(String.valueOf(emp.get("EmployeeId"))) == idOfTheEmployee) {
+					System.out.println(emp);
 				}
 			}
 		} else {
@@ -215,10 +213,7 @@ public class EmployeesAdministrationApp {
 	private static void viewAllEmployees() {
 		if (listOfEmployees.size() != 0) {
 			System.out.println("This is the list of all employees: ");
-			for (Object emp : listOfEmployees) {
-				System.out.println();
-				System.out.println(emp.toString().replaceAll("[{\"}]", "").replace(",", "\n").replace("employee:", ""));
-			}
+			System.out.println(listOfEmployees);
 		} else {
 			System.out.println("The list is empty!");
 		}
