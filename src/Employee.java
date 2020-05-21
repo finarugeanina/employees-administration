@@ -1,12 +1,6 @@
-import java.io.File;
-import java.io.FileReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Scanner;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 
 /**
  * This class implements a simple employee
@@ -21,6 +15,7 @@ public class Employee {
 	private String gender;
 	private String CNP;
 	Scanner scan = new Scanner(System.in);
+
 	/**
 	 * This returns the current name of this employee
 	 * 
@@ -48,6 +43,15 @@ public class Employee {
 	}
 
 	/**
+	 * This sets the employeeId of this employee
+	 * 
+	 * @param employeeId
+	 */
+	public void setEmployeeId(int employeeId) {
+		this.employeeId = employeeId;
+	}
+
+	/**
 	 * This returns the employeeId of this employee
 	 * 
 	 * @return
@@ -55,62 +59,6 @@ public class Employee {
 	public int getEmployeeId() {
 		return employeeId;
 	}
-
-	/**
-	 * This sets the employeeId of this employee only if it is unique
-	 * 
-	 * @param employeeId
-	 */
-	public void setEmployeeId(int employeeId) {
-		if (!validateUnicityOfId(employeeId)) {
-			System.out.println("The entered EmployeeId is not unique. Please re-enter the EmployeeId: ");
-			setEmployeeId(scan.nextInt());
-		} else {
-			this.employeeId = employeeId;
-		}
-	}
-
-	/**
-	 * This returns true if the id is unique
-	 * 
-	 * @param employeeId
-	 * @return
-	 */
-	private boolean validateUnicityOfId(int employeeId) {
-		String employeesJsonFile = "employees1.json";
-		File file = new File(employeesJsonFile);
-		if (file.length() != 0) {
-			JSONParser parser = new JSONParser();
-		try
-		{
-			JSONArray obj = (JSONArray) parser.parse(new FileReader(employeesJsonFile));
-			for (Object emp : obj) {
-				if (parseEmployeeObject((JSONObject) emp, employeeId)) {
-					return false;
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-		return true;
-	}
-
-	/**
-	 * This returns true if it finds an existing employeeId with the same value as
-	 * the employeeId entered by the user
-	 * 
-	 * @param employee
-	 * @param employeeId
-	 * @return
-	 */
-	public boolean parseEmployeeObject(JSONObject employee, int employeeId) {
-		JSONObject employeeObject = (JSONObject) employee.get("employee");
-		if (Integer.parseInt(String.valueOf(employeeObject.get("EmployeeId"))) == employeeId) {
-			return true;
-		} else
-			return false;
-	  }
 
 	/**
 	 * This returns the gender of this employee
@@ -172,8 +120,7 @@ public class Employee {
 	 * 
 	 * @return
 	 */
-	public static boolean isValidDateFormat(String date)
-	{
+	public static boolean isValidDateFormat(String date) {
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyMMdd");
 		dateFormat.setLenient(false);
 		try {
@@ -195,9 +142,6 @@ public class Employee {
 	public void addDetailsForEmployee() {
 		System.out.println("Please type in the name of the new employee:");
 		setName(scan.nextLine());
-		System.out.println("Please type in the employeeId of the new employee: ");
-		setEmployeeId(scan.nextInt());
-		scan.nextLine();
 		System.out.println("Please type in the CNP of the new employee: ");
 		setCNP(scan.nextLine());
 		System.out.println("Please type in the gender of the new employee (M/F): ");

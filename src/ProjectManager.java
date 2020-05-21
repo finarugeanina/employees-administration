@@ -2,6 +2,7 @@ import java.util.Scanner;
 
 public class ProjectManager extends Employee {
 	protected int pmExperience;
+	Scanner scan = new Scanner(System.in);
 
 	public int getPMExperience() {
 		return pmExperience;
@@ -20,9 +21,7 @@ public class ProjectManager extends Employee {
 	public void addDetailsForEmployee() {
 		super.addDetailsForEmployee();
 		System.out.println("Please type in the PM Experience for the new employee: ");
-		try (Scanner scan = new Scanner(System.in)) {
-			setPMExperience(scan.nextInt());
-		}
+		setPMExperience(scan.nextInt());
 	}
 
 	@Override

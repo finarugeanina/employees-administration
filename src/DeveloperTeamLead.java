@@ -2,6 +2,7 @@ import java.util.Scanner;
 
 public class DeveloperTeamLead extends DeveloperEmployee {
 	private int developerExperience;
+	Scanner scan = new Scanner(System.in);
 
 	public int getDeveloperExperience() {
 		return developerExperience;
@@ -20,9 +21,7 @@ public class DeveloperTeamLead extends DeveloperEmployee {
 	public void addDetailsForEmployee() {
 		super.addDetailsForEmployee();
 		System.out.println("Please type in the Developer experience of the new employee");
-		try (Scanner scan = new Scanner(System.in)) {
-			setDeveloperExperience(scan.nextInt());
-		}
+		setDeveloperExperience(scan.nextInt());
 	}
 
 	@Override
