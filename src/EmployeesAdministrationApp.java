@@ -3,10 +3,10 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Scanner;
 
 import org.json.simple.JSONArray;
@@ -14,7 +14,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 public class EmployeesAdministrationApp {
-	public static List<HashMap<String, Object>> listOfEmployees = new ArrayList<HashMap<String, Object>>();
+	public static Map<String, String> listOfEmployees = new HashMap<String, String>();
 
 	public static void main(String[] args) {
 		int number = chooseAnOptionFromMainMenu();
@@ -64,7 +64,12 @@ public class EmployeesAdministrationApp {
 					listOfEmployees.clear();
 					JSONArray arrayFromJsonFile = (JSONArray) parser.parse(new FileReader(jsonFile));
 					for (Object emp : arrayFromJsonFile) {
-						listOfEmployees.add((HashMap<String, Object>) emp);
+						Map<String, String> map = ((HashMap<String, String>) emp);
+						Iterator<Entry<String, String>> it = map.entrySet().iterator();
+						while (it.hasNext()) {
+							Map.Entry<String, String> pair = it.next();
+							listOfEmployees.put(pair.getKey(), pair.getValue());
+						}
 					}
 					System.out.println("The data from the " + jsonFile + " file was loaded");
 				} else {
@@ -89,9 +94,13 @@ public class EmployeesAdministrationApp {
 			try {
 				FileWriter file = new FileWriter(employeesJsonFile);
 				JSONArray array = new JSONArray();
-				for (HashMap<String, Object> obj : listOfEmployees) {
-					JSONObject object = new JSONObject(obj);
-					array.add(object);
+				// array.add(listOfEmployees);
+				Iterator<Entry<String, String>> it = listOfEmployees.entrySet().iterator();
+				while (it.hasNext()) {
+					Map.Entry<String, String> pair = it.next();
+					JSONObject obj = new JSONObject();
+					obj.put(pair.getKey(), pair.getValue());
+					array.add(obj);
 				}
 				file.write(array.toJSONString());
 				file.flush();
@@ -146,18 +155,19 @@ public class EmployeesAdministrationApp {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		String employeeDetailsStr = "";
 		Method[] methods = employee.getClass().getMethods();
-		Map<String, Object> employeeDetails = new HashMap<String, Object>();
-		for (Method method : methods) {
-			if (method.getName().startsWith("get") && !method.getName().equals("getClass")) {
-				try {
-					employeeDetails.put(method.getName().replace("get", ""), method.invoke(employee));
-				} catch (Exception e) {
-					e.printStackTrace();
+		try {
+			for (Method method : methods) {
+				if (method.getName().startsWith("get") && !method.getName().equals("getClass")) {
+					employeeDetailsStr = employeeDetailsStr + method.getName().replace("get", "") + ":" + method.invoke(employee)
+							+ " ";
 				}
 			}
+			listOfEmployees.put(String.valueOf(employee.getClass().getMethod("getEmployeeId").invoke(employee)), employeeDetailsStr);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		listOfEmployees.add((HashMap<String, Object>) employeeDetails);
 		System.out.println("The employee was added to your list.");
 	}
 
@@ -165,8 +175,8 @@ public class EmployeesAdministrationApp {
 		System.out.println("Please type in the employeeId of the new employee: ");
 		Scanner scan = new Scanner(System.in);
 		int idOfTheEmployee = scan.nextInt();
-		for (HashMap<String, Object> emp : listOfEmployees) {
-			if (Integer.parseInt(String.valueOf(emp.get("EmployeeId"))) == idOfTheEmployee) {
+		for (String key : listOfEmployees.keySet()) {
+			if (Integer.parseInt(key) == idOfTheEmployee) {
 				System.out.println("The id is not unique!");
 				idOfTheEmployee = getValidEmployeeId(employee);
 			}
@@ -200,9 +210,11 @@ public class EmployeesAdministrationApp {
 			System.out.println("Please type in the id of the employee you want to search: ");
 			Scanner scan = new Scanner(System.in);
 			int idOfTheEmployee = scan.nextInt();
-			for (HashMap<String, Object> emp : listOfEmployees) {
-				if (Integer.parseInt(String.valueOf(emp.get("EmployeeId"))) == idOfTheEmployee) {
-					System.out.println(emp);
+			Iterator<Entry<String, String>> it = listOfEmployees.entrySet().iterator();
+			while (it.hasNext()) {
+				Map.Entry<String, String> pair = it.next();
+				if (Integer.parseInt(pair.getKey()) == idOfTheEmployee) {
+					System.out.println(pair.getValue());
 				}
 			}
 		} else {
@@ -212,8 +224,12 @@ public class EmployeesAdministrationApp {
 
 	private static void viewAllEmployees() {
 		if (listOfEmployees.size() != 0) {
-			System.out.println("This is the list of all employees: ");
-			System.out.println(listOfEmployees);
+			System.out.println("This is the list of all employees: \n");
+			Iterator<Entry<String, String>> it = listOfEmployees.entrySet().iterator();
+			while (it.hasNext()) {
+				Map.Entry<String, String> pair = it.next();
+				System.out.println(pair.getValue());
+			}
 		} else {
 			System.out.println("The list is empty!");
 		}
