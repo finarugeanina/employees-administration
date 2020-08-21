@@ -3,8 +3,11 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
@@ -15,6 +18,9 @@ import org.json.simple.parser.JSONParser;
 
 public class EmployeesAdministrationApp {
 	public static Map<String, String> listOfEmployees = new HashMap<String, String>();
+
+	public static List<String> roles = new ArrayList<String>(
+			Arrays.asList("QAEmployee", "DeveloperEmployee", "QATeamLead", "DeveloperTeamLead", "ProjectManager"));
 
 	public static void main(String[] args) {
 		int number = chooseAnOptionFromMainMenu();
@@ -94,7 +100,6 @@ public class EmployeesAdministrationApp {
 			try {
 				FileWriter file = new FileWriter(employeesJsonFile);
 				JSONArray array = new JSONArray();
-				// array.add(listOfEmployees);
 				Iterator<Entry<String, String>> it = listOfEmployees.entrySet().iterator();
 				while (it.hasNext()) {
 					Map.Entry<String, String> pair = it.next();
@@ -114,7 +119,8 @@ public class EmployeesAdministrationApp {
 	}
 
 	private static void addNewEmployee() {
-		System.out.println("Please select the type of the new employee:" + "\n1. QA Employee" + "\n2. Developer Employee"
+		System.out.println("Please select the type of the employee:" + "\n1. QA Employee"
+				+ "\n2. Developer Employee"
 				+ "\n3. QA Team Lead Employee " + "\n4. Developer Team Lead Employee" + "\n5. Project Manager");
 		Scanner scan = new Scanner(System.in);
 		int typeOfTheEmployee = scan.nextInt();
@@ -155,7 +161,7 @@ public class EmployeesAdministrationApp {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		String employeeDetailsStr = "";
+		String employeeDetailsStr = (employee.getClass() + " ").replace("class ", "Type:");
 		Method[] methods = employee.getClass().getMethods();
 		try {
 			for (Method method : methods) {
@@ -211,11 +217,15 @@ public class EmployeesAdministrationApp {
 			Scanner scan = new Scanner(System.in);
 			int idOfTheEmployee = scan.nextInt();
 			Iterator<Entry<String, String>> it = listOfEmployees.entrySet().iterator();
-			while (it.hasNext()) {
-				Map.Entry<String, String> pair = it.next();
-				if (Integer.parseInt(pair.getKey()) == idOfTheEmployee) {
-					System.out.println(pair.getValue());
+			if (listOfEmployees.containsKey(String.valueOf(idOfTheEmployee))) {
+				while (it.hasNext()) {
+					Map.Entry<String, String> pair = it.next();
+					if (Integer.parseInt(pair.getKey()) == idOfTheEmployee) {
+						System.out.println(pair.getValue());
+					}
 				}
+			} else {
+				System.out.println("Id " + idOfTheEmployee + " does not exist!");
 			}
 		} else {
 			System.out.println("The list is empty!");
@@ -236,14 +246,134 @@ public class EmployeesAdministrationApp {
 	}
 
 	private static void convertEmployee() {
-		System.out.println("Please type in the employeeId of the employee you want to convert: ");
+		if (listOfEmployees.size() != 0) {
+			System.out.println("Please type in the employeeId of the employee you want to convert: ");
+			Scanner scan = new Scanner(System.in);
+			int idOfTheEmployee = scan.nextInt();
+			if (listOfEmployees.containsKey(String.valueOf(idOfTheEmployee))) {
+				String employeeDetailsStr = listOfEmployees.get(String.valueOf(idOfTheEmployee));
+				String previousTypeOfTheEmployee = employeeDetailsStr
+						.substring(employeeDetailsStr.indexOf(":") + 1,
+						employeeDetailsStr.indexOf(" "));
+				System.out.println("Please select the new type of the employee:\n");
+				roles.remove(previousTypeOfTheEmployee);
+				Map<Integer, String> mapOfRoles = new HashMap<Integer, String>();
+				for (int i = 0; i < roles.size(); i++) {
+					System.out.println(i + 1 + "." + roles.get(i));
+					mapOfRoles.put(i + 1, roles.get(i));
+				}
+				int roleConverted = scan.nextInt();
+				String newTypeOfTheEmployee = mapOfRoles.get(roleConverted);
+				roles.add(previousTypeOfTheEmployee);
+				System.out.println(
+						"You choose to convert the employee from " + previousTypeOfTheEmployee + " to " + newTypeOfTheEmployee);
+				try {
+					Class<?> previousClassOfTheEmployee = Class.forName(previousTypeOfTheEmployee);
+					Object emp = previousClassOfTheEmployee.getDeclaredConstructor().newInstance();
+					Method[] previousMethods = emp.getClass().getDeclaredMethods();
+					for (Method method : previousMethods) {
+						if (method.getName().startsWith("set")) {
+							String substractPreviousMethodString = method.getName().replace("set", "");
+							String stringOfOldType = employeeDetailsStr.substring(0,
+									employeeDetailsStr.indexOf(substractPreviousMethodString));
+							employeeDetailsStr = employeeDetailsStr.replace(stringOfOldType, "");
+							if (!(Class.forName(newTypeOfTheEmployee)).getSuperclass()
+									.equals(Class.forName(previousTypeOfTheEmployee))) {
+								String stringToBeReplaced = employeeDetailsStr.substring(
+										employeeDetailsStr.indexOf(substractPreviousMethodString),
+										employeeDetailsStr.indexOf(" ") + 1);
+								employeeDetailsStr = employeeDetailsStr.replace(stringToBeReplaced, "");
+							}
+						}
+					}
+					Class<?> c = Class.forName(newTypeOfTheEmployee);
+					Object employee = c.getDeclaredConstructor().newInstance();
+					String newStringWithDetails = "";
+					newStringWithDetails = "Type:" + newTypeOfTheEmployee + " ";
+					if (!Class.forName(previousTypeOfTheEmployee).getSuperclass().equals(Class.forName(newTypeOfTheEmployee))) {
+						Method[] addDetailsMethod = employee.getClass().getDeclaredMethods();
+						for (Method method : addDetailsMethod) {
+							if (method.getName().startsWith("set")) {
+								System.out.println(
+										"Please type in the " + method.getName().replace("set", "") + " of the new employee");
+								int setterArgument = scan.nextInt();
+								method.invoke(employee, setterArgument);
+							}
+						}
+						for (Method method : addDetailsMethod) {
+							if (!method.getName().equals("addDetailsForEmployee") && method.getName().startsWith("get")
+									&& !method.getName().equals("getClass")) {
+								newStringWithDetails = newStringWithDetails + method.getName().replace("get", "") + ":"
+										+ method.invoke(employee) + " ";
+							}
+						}
+					}
+					newStringWithDetails = newStringWithDetails + employeeDetailsStr;
+					listOfEmployees.replace(String.valueOf(idOfTheEmployee), newStringWithDetails);
+					System.out
+							.println("The employee was converted from " + previousTypeOfTheEmployee + " to " + newTypeOfTheEmployee);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			} else {
+				System.out.println("Id " + idOfTheEmployee + " does not exist!");
+			}
+		} else {
+			System.out.println("The list is empty!");
+		}
 	}
 
 	private static void updateEmployee() {
-		System.out.println("Please type in the employeeId of the employee you want to edit: ");
+		if (listOfEmployees.size() != 0) {
+			System.out.println("Please type in the employeeId of the employee you want to edit: ");
+			Scanner scan = new Scanner(System.in);
+			int idOfTheEmployee = scan.nextInt();
+			if (listOfEmployees.containsKey(String.valueOf(idOfTheEmployee))) {
+				String employeeDetailsStr = listOfEmployees.get(String.valueOf(idOfTheEmployee));
+				String typeOfTheEmployee = employeeDetailsStr.substring(employeeDetailsStr.indexOf(":") + 1,
+						employeeDetailsStr.indexOf(" "));
+				try {
+					Class<?> c = Class.forName(typeOfTheEmployee);
+					Object employee = c.getDeclaredConstructor().newInstance();
+					Method addDetailsMethod = c.getDeclaredMethod("addDetailsForEmployee");
+					addDetailsMethod.invoke(employee);
+					listOfEmployees.remove(String.valueOf(idOfTheEmployee));
+					employeeDetailsStr = "Type:" + typeOfTheEmployee + " ";
+					Method[] methods = employee.getClass().getMethods();
+					for (Method method : methods) {
+						if (method.getName().startsWith("get") && !method.getName().equals("getClass")
+								&& !method.getName().equals("getEmployeeId")) {
+							employeeDetailsStr = employeeDetailsStr + method.getName().replace("get", "") + ":"
+									+ method.invoke(employee) + " ";
+						}
+					}
+					employeeDetailsStr = employeeDetailsStr + "EmployeeId:" + idOfTheEmployee + " ";
+					listOfEmployees.put(String.valueOf(idOfTheEmployee), employeeDetailsStr);
+					System.out.println("The employee was edited.");
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			} else {
+				System.out.println("Id " + idOfTheEmployee + " does not exist!");
+			}
+		} else {
+			System.out.println("The list is empty!");
+		}
 	}
 
 	private static void deleteEmployee() {
-		System.out.println("Please type in the employeeId of the employee you want to delete: ");
+		if (listOfEmployees.size() != 0) {
+			System.out.println("Please type in the employeeId of the employee you want to delete: ");
+			Scanner scan = new Scanner(System.in);
+			int idOfTheEmployeeDelete = scan.nextInt();
+			if (listOfEmployees.containsKey(String.valueOf(idOfTheEmployeeDelete))) {
+				listOfEmployees.remove(String.valueOf(idOfTheEmployeeDelete));
+				System.out.println("The employee with the id " + idOfTheEmployeeDelete + " was deleted from the list.");
+			} else {
+				System.out.println("Id " + idOfTheEmployeeDelete + " does not exist!");
+			}
+		} else {
+			System.out.println("The list is empty!");
+		}
 	}
 }
